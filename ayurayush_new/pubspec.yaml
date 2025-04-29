@@ -26,8 +26,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/logo.png
-    - assets/images/pilopouse.jpg
-    - assets/images/prostostop.jpg
+    - assets/images/Pilopouse.jpg
+    - assets/images/Prostostop.jpg
     - assets/images/saffron_care.jpg
     - assets/images/stomacalm.jpg
     - assets/images/vaji_cap.jpg
