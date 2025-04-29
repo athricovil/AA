@@ -7,6 +7,7 @@ import 'cart_page.dart';
 import 'product_detail_page.dart';
 import 'chatbot_widget.dart';
 import 'providers/cart_provider.dart';
+import 'my_account.dart';
 
 void main() {
   runApp(
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
         '/about': (context) => AboutPage(),
         '/products': (context) => ProductsPage(),
         '/cart': (context) => CartPage(),
+        '/my-account': (context) => MyAccountPage(),
       },
     );
   }
@@ -145,6 +147,7 @@ class _HomePageState extends State<HomePage> {
               TextButton(onPressed: () {}, child: Text('Services', style: TextStyle(color: Colors.white))),
               TextButton(onPressed: () {}, child: Text('Contact', style: TextStyle(color: Colors.white))),
               IconButton(onPressed: () {}, icon: Icon(Icons.search, color: Colors.white)),
+              IconButton(onPressed: () { Navigator.pushNamed(context, '/my-account');}, icon: Icon(Icons.account_circle, color: Colors.white)),
               Stack(
                 children: [
                   IconButton(
@@ -200,6 +203,7 @@ class _HomePageState extends State<HomePage> {
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
+                                    // ignore: deprecated_member_use
                                     Color(0xFFF5E6F5).withOpacity(0.8),
                                   ],
                                   stops: [0.7, 1.0],
