@@ -143,6 +143,7 @@ class _AboutPageState extends State<AboutPage> {
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
+                                    // ignore: deprecated_member_use
                                     Color(0xFFF5E6F5).withOpacity(1.0),
                                   ],
                                   stops: [0.85, 1.0],
