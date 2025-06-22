@@ -16,10 +16,12 @@ class MyAccountPage extends StatelessWidget {
             children: <Widget>[
               SizedBox(height: 20),
                ImageCarousel(),
-              Text(
+               Padding(
+  padding: const EdgeInsets.only(top: 20),
+              child: Text(
                 'My Account',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
+              )),
               SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.all(16.0),

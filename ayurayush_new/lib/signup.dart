@@ -46,7 +46,9 @@ class SignupPageContent extends StatelessWidget {
           child: Text('Register'),
         ),
         const SizedBox(width: 18),
-        ElevatedButton(
+       Padding(
+  padding: const EdgeInsets.only(top: 20),
+  child: ElevatedButton(
           onPressed: () async {
             await _signInWithGoogle();
           },
@@ -56,7 +58,7 @@ class SignupPageContent extends StatelessWidget {
                             color: Colors.purple,
                           ),
                         ),
-        )
+        ))
         
         
       ],
