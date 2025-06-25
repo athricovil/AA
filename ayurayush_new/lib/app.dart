@@ -11,8 +11,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Ayurayush',
       theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
+  scaffoldBackgroundColor: Colors.white,
+  appBarTheme: AppBarTheme(
+    backgroundColor: Colors.white,
+    elevation: 0,
+  ),
+),
       initialRoute: '/home',
       onGenerateRoute: (settings) {
         if (settings.name!.startsWith('/products/')) {

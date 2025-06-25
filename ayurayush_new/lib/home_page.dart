@@ -3,7 +3,7 @@ import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
 import 'chatbot_widget.dart';
 import 'providers/cart_provider.dart';
-import 'styles.dart'; // <-- Import your styles file
+import 'styles.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -12,19 +12,22 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late VideoPlayerController _controller;
+  late Future<void> _initializeVideoPlayerFuture;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.asset('assets/videos/output.mp4')
-      ..initialize().then((_) {
-        setState(() {
-          _controller.play();
-          _controller.setLooping(true);
-        });
-      }).catchError((error) {
-        print('Video initialization error: $error');
+    _controller = VideoPlayerController.asset('assets/videos/AAV_web.mp4');
+    _initializeVideoPlayerFuture = _controller.initialize().then((_) {
+      _controller.setVolume(0);
+      _controller.setLooping(true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _controller.play();
       });
+      setState(() {});
+    }).catchError((error) {
+      print('Video initialization error: $error');
+    });
   }
 
   @override
@@ -46,13 +49,15 @@ class _HomePageState extends State<HomePage> {
     return Consumer<CartProvider>(
       builder: (context, cartProvider, child) {
         return Scaffold(
+          backgroundColor: Colors.white,
           appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
             title: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-               Image.asset('assets/images/logo.png', height: 40),
+                Image.asset('assets/images/logo.png', height: 40),
                 SizedBox(width: 10),
-                
               ],
             ),
             actions: [
@@ -68,19 +73,22 @@ class _HomePageState extends State<HomePage> {
                 },
                 child: Text('About', style: kNavbarButtonTextStyle),
               ),
-              // TextButton(onPressed: () {}, child: Text('Ayurveda', style: kNavbarButtonTextStyle)),
-              // TextButton(onPressed: () {}, child: Text('Doctors', style: kNavbarButtonTextStyle)),
-              // TextButton(onPressed: () {}, child: Text('Courses', style: kNavbarButtonTextStyle)),
               TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/products');
                 },
                 child: Text('Products', style: kNavbarButtonTextStyle),
               ),
-              // TextButton(onPressed: () {}, child: Text('Services', style: kNavbarButtonTextStyle)),
-              // TextButton(onPressed: () {}, child: Text('Contact', style: kNavbarButtonTextStyle)),
-              IconButton(onPressed: () {}, icon: Icon(Icons.search, color: const Color.fromARGB(255, 0, 0, 0))),
-              IconButton(onPressed: () { Navigator.pushNamed(context, '/my-account');}, icon: Icon(Icons.account_circle, color: const Color.fromARGB(255, 0, 0, 0))),
+              IconButton(
+                onPressed: () {},
+                icon: Icon(Icons.search, color: const Color.fromARGB(255, 0, 0, 0)),
+              ),
+              IconButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/my-account');
+                },
+                icon: Icon(Icons.account_circle, color: const Color.fromARGB(255, 0, 0, 0)),
+              ),
               Stack(
                 children: [
                   IconButton(
@@ -105,7 +113,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ],
-            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
           ),
           body: Stack(
             children: [
@@ -118,32 +125,39 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Stack(
-                        //   children: [
-                        //     Container(
-                        //       width: screenWidth,
-                        //       height: videoHeight,
-                        //       child: _controller.value.isInitialized
-                        //           ? VideoPlayer(_controller)
-                        //           : Center(child: CircularProgressIndicator()),
-                        //     ),
-                        //     Container(
-                        //       width: screenWidth,
-                        //       height: videoHeight,
-                        //       decoration: BoxDecoration(
-                        //         gradient: LinearGradient(
-                        //           begin: Alignment.topCenter,
-                        //           end: Alignment.bottomCenter,
-                        //           colors: [
-                        //             Colors.transparent,
-                        //             const Color.fromARGB(255, 196, 186, 186),
-                        //           ],
-                        //           stops: [0.7, 1.0],
-                        //         ),
-                        //       ),
-                        //     ),
-                        //   ],
-                        // ),
+                        Stack(
+                          children: [
+                            Container(
+                              width: screenWidth,
+                              height: videoHeight,
+                              child: FutureBuilder(
+                                future: _initializeVideoPlayerFuture,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.done) {
+                                    return VideoPlayer(_controller);
+                                  } else {
+                                    return Center(child: CircularProgressIndicator());
+                                  }
+                                },
+                              ),
+                            ),
+                            Container(
+                              width: screenWidth,
+                              height: videoHeight,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    const Color.fromARGB(0, 255, 255, 255),
+                                    Color.fromARGB(255, 255, 255, 255),
+                                  ],
+                                  stops: [0.7, 1.0],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                         Padding(
                           padding: EdgeInsets.only(top: 5, bottom: 10),
                           child: Column(
@@ -328,7 +342,6 @@ class _HomePageState extends State<HomePage> {
               ChatbotWidget(),
             ],
           ),
-          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         );
       },
     );
