@@ -4,10 +4,10 @@ import 'package:carousel_slider/carousel_controller.dart' as carousel_controller
 
 class ImageCarousel extends StatelessWidget {
   final List<String> imagePaths = [
-    '../assets/images/American-studen-ebfdf61a-402d-470f-aea1-175fce862c20.webp',
-    '../assets/images/AYURVEDA-FUNDAMENTAL-COURSE.webp',
-    '../assets/images/AYURVEDA-PANCHAKARMA.webp',
-    '../assets/images/Tridosha-Phylos-93bcb7cd-2cd7-4967-ab96-7a1ffa759459.webp',
+    'assets/images/American-studen-ebfdf61a-402d-470f-aea1-175fce862c20.webp',
+    'assets/images/AYURVEDA-FUNDAMENTAL-COURSE.webp',
+    'assets/images/AYURVEDA-PANCHAKARMA.webp',
+    'assets/images/Tridosha-Phylos-93bcb7cd-2cd7-4967-ab96-7a1ffa759459.webp',
   ];
 
   final carousel_controller.CarouselSliderController _controller = carousel_controller.CarouselSliderController();
