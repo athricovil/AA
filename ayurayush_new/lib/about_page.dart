@@ -112,7 +112,7 @@ class _AboutPageState extends State<AboutPage> {
                 ],
               ),
             ],
-            backgroundColor: Color(0xFF4A2C2A),
+            backgroundColor: Color.fromARGB(255, 255, 255, 255),
           ),
           body: Stack(
             children: [
@@ -144,7 +144,7 @@ class _AboutPageState extends State<AboutPage> {
                                   colors: [
                                     Colors.transparent,
                                     // ignore: deprecated_member_use
-                                    Color(0xFFF5E6F5).withOpacity(1.0),
+                                    Color.fromARGB(255, 255, 255, 255).withOpacity(1.0),
                                   ],
                                   stops: [0.85, 1.0],
                                 ),
