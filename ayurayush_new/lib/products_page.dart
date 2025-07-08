@@ -1,16 +1,35 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 import 'chatbot_widget.dart';
 import 'providers/cart_provider.dart';
+import 'product.dart';
+import 'app_config.dart';
 
-class ProductsPage extends StatelessWidget {
-  final List<Map<String, dynamic>> products = [
-    {'name': 'Pilopouse', 'image': 'assets/images/pilopouse.jpg', 'desc': 'Herbal supplement for health.', 'price': 2195.00},
-    {'name': 'Prostostop', 'image': 'assets/images/prostostop.jpg', 'desc': 'Supports prostate health.', 'price': 875.00},
-    {'name': 'Saffron Care', 'image': 'assets/images/saffron_care.jpg', 'desc': 'Skin-nourishing oil.', 'price': 3895.00},
-    {'name': 'Stomacalm', 'image': 'assets/images/stomacalm.jpg', 'desc': 'Digestive health support.', 'price': 1599.00},
-    {'name': 'Vaji Cap', 'image': 'assets/images/vaji_cap.jpg', 'desc': 'Herbal supplements to improve sexual capacity.', 'price': 2499.00},
-  ];
+class ProductsPage extends StatefulWidget {
+  @override
+  _ProductsPageState createState() => _ProductsPageState();
+}
+
+class _ProductsPageState extends State<ProductsPage> {
+  late Future<List<Product>> _productsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _productsFuture = fetchProducts();
+  }
+
+  Future<List<Product>> fetchProducts() async {
+    final response = await http.get(Uri.parse(AppConfig.apiBaseUrl + '/api/products'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => Product.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load products');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,9 +95,18 @@ class ProductsPage extends StatelessWidget {
             ],
             backgroundColor: Color(0xFF4A2C2A),
           ),
-          body: Stack(
-            children: [
-              SingleChildScrollView(
+          body: FutureBuilder<List<Product>>(
+            future: _productsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: \\${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No products found.'));
+              }
+              final products = snapshot.data!;
+              return SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -104,7 +132,7 @@ class ProductsPage extends StatelessWidget {
                         final product = products[index];
                         return GestureDetector(
                           onTap: () {
-                            Navigator.pushNamed(context, '/products/${product['name'].toLowerCase()}');
+                            // Implement navigation to product detail if needed
                           },
                           child: Card(
                             elevation: 3,
@@ -120,14 +148,13 @@ class ProductsPage extends StatelessWidget {
                                       topLeft: Radius.circular(8),
                                       topRight: Radius.circular(8),
                                     ),
-                                    child: Container(
-                                      color: Colors.white,
-                                      child: Image.asset(
-                                        product['image'],
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
+                                    child: product.imageUrl.isNotEmpty
+                                        ? Image.network(
+                                            product.imageUrl,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Container(color: Colors.grey[200]),
                                   ),
                                 ),
                                 Padding(
@@ -136,7 +163,7 @@ class ProductsPage extends StatelessWidget {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        product['name'],
+                                        product.name,
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -147,7 +174,7 @@ class ProductsPage extends StatelessWidget {
                                       ),
                                       SizedBox(height: 4),
                                       Text(
-                                        product['desc'],
+                                        product.description,
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey[600],
@@ -157,7 +184,7 @@ class ProductsPage extends StatelessWidget {
                                       ),
                                       SizedBox(height: 8),
                                       Text(
-                                        '₹${product['price'].toStringAsFixed(2)}',
+                                        '₹ {product.price.toStringAsFixed(2)}',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -168,13 +195,9 @@ class ProductsPage extends StatelessWidget {
                                       Row(
                                         children: [
                                           Icon(Icons.star, color: Colors.orange, size: 16),
-                                          Icon(Icons.star, color: Colors.orange, size: 16),
-                                          Icon(Icons.star, color: Colors.orange, size: 16),
-                                          Icon(Icons.star_half, color: Colors.orange, size: 16),
-                                          Icon(Icons.star_border, color: Colors.orange, size: 16),
                                           SizedBox(width: 4),
                                           Text(
-                                            '(4.2)',
+                                            '(${product.rating.toStringAsFixed(1)})',
                                             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                           ),
                                         ],
@@ -183,13 +206,13 @@ class ProductsPage extends StatelessWidget {
                                       ElevatedButton(
                                         onPressed: () {
                                           cartProvider.addToCart(CartItem(
-                                            name: product['name'],
-                                            image: product['image'],
-                                            desc: product['desc'],
-                                            price: product['price'],
+                                            name: product.name,
+                                            image: product.imageUrl,
+                                            desc: product.description,
+                                            price: product.price,
                                           ));
                                           ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('${product['name']} added to cart!')),
+                                            SnackBar(content: Text('${product.name} added to cart!')),
                                           );
                                         },
                                         style: ElevatedButton.styleFrom(
@@ -253,9 +276,8 @@ class ProductsPage extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              ChatbotWidget(),
-            ],
+              );
+            },
           ),
           backgroundColor: Color(0xFFF5E6F5),
         );

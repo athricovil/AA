@@ -48,7 +48,7 @@ class _AboutPageState extends State<AboutPage> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/home');
+                  Navigator.popUntil(context, ModalRoute.withName('/home'));
                 },
                 child: Text('Home'),
               ),

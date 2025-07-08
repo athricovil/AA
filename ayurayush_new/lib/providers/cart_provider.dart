@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../app_config.dart';
+import '../user_session.dart';
+import '../product.dart';
 
 class CartItem {
   final String name;
@@ -23,9 +28,36 @@ class CartProvider with ChangeNotifier {
     return _cartItems.fold(0, (sum, item) => sum + item.price);
   }
 
-  void addToCart(CartItem item) {
-    _cartItems.add(item);
-    notifyListeners();
+  Future<void> addToCart(CartItem item, {int? productId, List<Product>? productsList}) async {
+    int? userId = await UserSession.getUserId();
+    if (userId == null || userId == 0) {
+      // Guest: local cart
+      _cartItems.add(item);
+      notifyListeners();
+    } else {
+      // Logged in: send to backend
+      final token = await UserSession.getToken();
+      final headers = {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+      final response = await http.post(
+        Uri.parse(AppConfig.apiBaseUrl + '/api/cart'),
+        headers: headers,
+        body: jsonEncode({
+          'userId': userId,
+          'productId': productId,
+          'quantity': 1,
+        }),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (productsList != null) {
+          await fetchCart(productsList); // Fetch from backend after add for logged-in users
+        }
+      } else {
+        throw Exception('Failed to add to cart in backend');
+      }
+    }
   }
 
   void removeFromCart(CartItem item) {
@@ -36,5 +68,46 @@ class CartProvider with ChangeNotifier {
   void clearCart() {
     _cartItems.clear();
     notifyListeners();
+  }
+
+  Future<void> fetchCart(List<Product> productsList) async {
+    int? userId = await UserSession.getUserId();
+    if (userId == null || userId == 0) {
+      // Guest: use local cart
+      notifyListeners();
+      return;
+    }
+    final token = await UserSession.getToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    final response = await http.get(
+      Uri.parse(AppConfig.apiBaseUrl + '/api/cart/$userId'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      _cartItems = data.map((json) {
+        final product = productsList.firstWhere(
+          (p) => p.id == json['productId'],
+          orElse: () => Product(
+            id: json['productId'],
+            name: 'Unknown',
+            description: '',
+            price: 0.0,
+            imageUrl: '',
+            rating: 0.0,
+          ),
+        );
+        return CartItem(
+          name: product.name,
+          image: product.imageUrl,
+          desc: product.description,
+          price: product.price,
+        );
+      }).toList();
+      notifyListeners();
+    }
   }
 }
