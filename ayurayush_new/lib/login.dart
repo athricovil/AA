@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'app_config.dart';
+import 'user_session.dart';
 
 class LoginPageContent extends StatefulWidget {
   @override
@@ -26,7 +28,7 @@ class _LoginPageContentState extends State<LoginPageContent> {
     });
 
     final response = await http.post(
-      Uri.parse('http://localhost:8080/auth/login'),
+      Uri.parse(AppConfig.apiBaseUrl + '/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': _usernameController.text.trim(),
@@ -41,10 +43,24 @@ class _LoginPageContentState extends State<LoginPageContent> {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final username = data['username'] ?? _usernameController.text.trim();
+      final userId = data['userId'];
+      final token = data['token'];
+      int parsedUserId = 0;
+      if (userId != null) {
+        if (userId is int) {
+          parsedUserId = userId;
+        } else if (userId is String) {
+          parsedUserId = int.tryParse(userId) ?? 0;
+        } else if (userId is double) {
+          parsedUserId = userId.toInt();
+        }
+        await UserSession.saveUserSession(username, parsedUserId);
+      }
+      if (token != null) {
+        await UserSession.saveToken(token);
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login successful!')));
-      // Pass username back to parent (if using overlay/modal)
       Navigator.pop(context, username);
-      // If using Provider or app state, set the logged-in user here
     } else {
       setState(() {
         _error = 'Login failed. Please check your credentials.';

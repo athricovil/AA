@@ -6,6 +6,11 @@ import 'providers/cart_provider.dart';
 import 'styles.dart';
 import 'login.dart';
 import 'signup.dart';
+import 'app_config.dart';
+import 'product.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'user_session.dart';
 
 ValueNotifier<String?> loggedInUsername = ValueNotifier<String?>(null);
 
@@ -23,6 +28,10 @@ class _HomePageState extends State<HomePage> {
   bool _showAuthOverlay = false;
   bool _showLogin = true; // true: login, false: register
   bool _showDrawer = false;
+
+  List<Product> _products = [];
+  bool _productsLoading = true;
+  String? _productsError;
 
   void _openAuthOverlay(bool login) async {
     setState(() {
@@ -83,6 +92,10 @@ class _HomePageState extends State<HomePage> {
       _openAuthOverlay(true);
     } else if (result != null && result.isNotEmpty) {
       loggedInUsername.value = result;
+      // After login, reload userId from session and refresh UI
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      await cartProvider.fetchCart(_products);
+      setState(() {}); // Force UI refresh so cart logic sees new userId
     }
     setState(() {
       _showAuthOverlay = false;
@@ -121,6 +134,42 @@ class _HomePageState extends State<HomePage> {
     }).catchError((error) {
       print('Video initialization error: $error');
     });
+    _fetchProducts();
+    _restoreLogin();
+  }
+
+  Future<void> _restoreLogin() async {
+    final username = await UserSession.getUsername();
+    if (username != null && username.isNotEmpty) {
+      loggedInUsername.value = username;
+    }
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _productsLoading = true;
+      _productsError = null;
+    });
+    try {
+      final response = await http.get(Uri.parse(AppConfig.apiBaseUrl + '/api/products'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _products = data.map((json) => Product.fromJson(json)).toList();
+          _productsLoading = false;
+        });
+      } else {
+        setState(() {
+          _productsError = 'Failed to load products';
+          _productsLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _productsError = 'Error: $e';
+        _productsLoading = false;
+      });
+    }
   }
 
   @override
@@ -128,14 +177,6 @@ class _HomePageState extends State<HomePage> {
     _controller.dispose();
     super.dispose();
   }
-
-  final List<Map<String, dynamic>> products = [
-    {'name': 'Pilopouse', 'image': 'assets/images/pilopouse.jpg', 'desc': 'Herbal supplement for health.', 'price': 2195.00},
-    {'name': 'Prostostop', 'image': 'assets/images/prostostop.jpg', 'desc': 'Supports prostate health.', 'price': 875.00},
-    {'name': 'Saffron Care', 'image': 'assets/images/saffron_care.jpg', 'desc': 'Skin-nourishing oil.', 'price': 3895.00},
-    {'name': 'Stomacalm', 'image': 'assets/images/stomacalm.jpg', 'desc': 'Digestive health support.', 'price': 1599.00},
-    {'name': 'Vaji Cap', 'image': 'assets/images/vaji_cap.jpg', 'desc': 'Herbal supplements to improve sexual capacity.', 'price': 2499.00},
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -319,6 +360,11 @@ class _HomePageState extends State<HomePage> {
                                             style: kSectionTitleStyle,
                                           ),
                                         ),
+                                        if (_productsLoading)
+                                          Center(child: CircularProgressIndicator())
+                                        else if (_productsError != null)
+                                          Center(child: Text(_productsError!))
+                                        else
                                         GridView.builder(
                                           shrinkWrap: true,
                                           physics: NeverScrollableScrollPhysics(),
@@ -329,12 +375,12 @@ class _HomePageState extends State<HomePage> {
                                             mainAxisSpacing: 24,
                                             childAspectRatio: cardAspectRatio,
                                           ),
-                                          itemCount: products.length,
+                                          itemCount: _products.length,
                                           itemBuilder: (context, index) {
-                                            final product = products[index];
+                                            final product = _products[index];
                                             return GestureDetector(
                                               onTap: () {
-                                                Navigator.pushNamed(context, '/products/${product['name'].toLowerCase()}');
+                                                Navigator.pushNamed(context, '/products/${product.name.toLowerCase()}');
                                               },
                                               child: Card(
                                                 elevation: 4,
@@ -355,44 +401,42 @@ class _HomePageState extends State<HomePage> {
                                                           ),
                                                           child: Container(
                                                             color: Colors.white,
-                                                            child: Image.asset(
-                                                              product['image'],
-                                                              width: double.infinity,
-                                                              fit: BoxFit.cover,
-                                                            ),
+                                                            child: product.imageUrl.isNotEmpty
+                                                                ? Image.network(
+                                                                    product.imageUrl,
+                                                                    width: double.infinity,
+                                                                    fit: BoxFit.cover,
+                                                                  )
+                                                                : Container(color: Colors.grey[200]),
                                                           ),
                                                         ),
                                                       ),
                                                       SizedBox(height: 8),
                                                       Text(
-                                                        product['name'],
+                                                        product.name,
                                                         style: kProductTitleStyle,
                                                         maxLines: 2,
                                                         overflow: TextOverflow.ellipsis,
                                                       ),
                                                       SizedBox(height: 4),
                                                       Text(
-                                                        product['desc'],
+                                                        product.description,
                                                         style: kProductDescStyle,
                                                         maxLines: 2,
                                                         overflow: TextOverflow.ellipsis,
                                                       ),
                                                       SizedBox(height: 8),
                                                       Text(
-                                                        '₹${product['price'].toStringAsFixed(2)}',
+                                                        '₹${product.price.toStringAsFixed(2)}',
                                                         style: kProductPriceStyle,
                                                       ),
                                                       SizedBox(height: 8),
                                                       Row(
                                                         children: [
                                                           Icon(Icons.star, color: Colors.orange, size: 16),
-                                                          Icon(Icons.star, color: Colors.orange, size: 16),
-                                                          Icon(Icons.star, color: Colors.orange, size: 16),
-                                                          Icon(Icons.star_half, color: Colors.orange, size: 16),
-                                                          Icon(Icons.star_border, color: Colors.orange, size: 16),
                                                           SizedBox(width: 4),
                                                           Text(
-                                                            '(4.2)',
+                                                            '(${product.rating.toStringAsFixed(1)})',
                                                             style: kProductRatingStyle,
                                                           ),
                                                         ],
@@ -400,14 +444,18 @@ class _HomePageState extends State<HomePage> {
                                                       SizedBox(height: 4),
                                                       ElevatedButton(
                                                         onPressed: () {
-                                                          cartProvider.addToCart(CartItem(
-                                                            name: product['name'],
-                                                            image: product['image'],
-                                                            desc: product['desc'],
-                                                            price: product['price'],
-                                                          ));
+                                                          cartProvider.addToCart(
+                                                            CartItem(
+                                                              name: product.name,
+                                                              image: product.imageUrl,
+                                                              desc: product.description,
+                                                              price: product.price,
+                                                            ),
+                                                            productId: product.id,
+                                                            productsList: _products,
+                                                          );
                                                           ScaffoldMessenger.of(context).showSnackBar(
-                                                            SnackBar(content: Text('${product['name']} added to cart!')),
+                                                            SnackBar(content: Text('${product.name} added to cart!')),
                                                           );
                                                         },
                                                         style: ElevatedButton.styleFrom(
@@ -724,6 +772,7 @@ class _HomePageState extends State<HomePage> {
                   break;
                 case 4:
                   loggedInUsername.value = null; // Logout
+                  UserSession.clearUserSession();
                   break;
               }
             },
