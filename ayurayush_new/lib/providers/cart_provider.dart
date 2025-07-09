@@ -42,7 +42,7 @@ class CartProvider with ChangeNotifier {
         if (token != null) 'Authorization': 'Bearer $token',
       };
       final response = await http.post(
-        Uri.parse(AppConfig.apiBaseUrl + '/api/cart'),
+        Uri.parse(AppConfig.apiBaseUrl + '/cart'),
         headers: headers,
         body: jsonEncode({
           'userId': userId,
@@ -83,7 +83,7 @@ class CartProvider with ChangeNotifier {
       if (token != null) 'Authorization': 'Bearer $token',
     };
     final response = await http.get(
-      Uri.parse(AppConfig.apiBaseUrl + '/api/cart/$userId'),
+      Uri.parse(AppConfig.apiBaseUrl + '/cart/$userId'),
       headers: headers,
     );
     if (response.statusCode == 200) {
