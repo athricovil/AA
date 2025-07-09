@@ -151,7 +151,7 @@ class _HomePageState extends State<HomePage> {
       _productsError = null;
     });
     try {
-      final response = await http.get(Uri.parse(AppConfig.apiBaseUrl + '/api/products'));
+      final response = await http.get(Uri.parse(AppConfig.apiBaseUrl + '/products'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {

@@ -34,7 +34,7 @@ class _CartPageState extends State<CartPage> {
 
   Future<void> _loadProductsAndFetchCart() async {
     try {
-      final response = await http.get(Uri.parse(AppConfig.apiBaseUrl + '/api/products'));
+      final response = await http.get(Uri.parse(AppConfig.apiBaseUrl + '/products'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         _products = data.map((json) => Product.fromJson(json)).toList();
