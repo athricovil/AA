@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'app_config.dart';
 
 class SignupPageContent extends StatefulWidget {
   @override
@@ -36,7 +37,7 @@ class _SignupPageContentState extends State<SignupPageContent> {
     });
 
     final response = await http.post(
-      Uri.parse('http://localhost:8080/auth/register'),
+      Uri.parse(AppConfig.apiBaseUrl + '/auth/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': _usernameController.text.trim(),
