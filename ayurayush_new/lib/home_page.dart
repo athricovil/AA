@@ -8,6 +8,7 @@ import 'login.dart';
 import 'signup.dart';
 import 'app_config.dart';
 import 'product.dart';
+import 'product_detail_page.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'user_session.dart';
@@ -25,63 +26,106 @@ class _HomePageState extends State<HomePage> {
 
   final double videoHeight = 300.0; // Define videoHeight with a suitable value
 
-  bool _showAuthOverlay = false;
-  bool _showLogin = true; // true: login, false: register
   bool _showDrawer = false;
 
   List<Product> _products = [];
   bool _productsLoading = true;
   String? _productsError;
+  Map<int, int> _productQuantities = {}; // Track quantities for each product
+
+  int getQuantityForProduct(int productId) {
+    return _productQuantities[productId] ?? 1;
+  }
+
+  void setQuantityForProduct(int productId, int quantity) {
+    if (_productQuantities[productId] != quantity && mounted) {
+      setState(() {
+        _productQuantities[productId] = quantity;
+      });
+    }
+  }
 
   void _openAuthOverlay(bool login) async {
-    setState(() {
-      _showAuthOverlay = true;
-      _showLogin = login;
-    });
-
     final result = await showDialog<String>(
       context: context,
+      barrierDismissible: true,
       builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Container(
-          width: 380,
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    login ? "Sign In" : "Register",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.deepPurple,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              login ? LoginPageContent() : SignupPageContent(),
-              SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(login ? "Don't have an account? " : "Already have an account? "),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _openAuthOverlay(!login);
-                    },
-                    child: Text(login ? "Register" : "Sign In"),
-                  ),
-                ],
+          width: 400,
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: Offset(0, 4),
               ),
             ],
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        login ? "Sign In" : "Register",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4A2C2A),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.grey.shade600),
+                        onPressed: () => Navigator.pop(context),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.grey.shade100,
+                          shape: CircleBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  login ? LoginPageContent() : SignupPageContent(),
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        login ? "Don't have an account? " : "Already have an account? ",
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _openAuthOverlay(!login);
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Color(0xFF4A2C2A),
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        child: Text(
+                          login ? "Register" : "Sign In",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -97,27 +141,22 @@ class _HomePageState extends State<HomePage> {
       await cartProvider.fetchCart(_products);
       setState(() {}); // Force UI refresh so cart logic sees new userId
     }
-    setState(() {
-      _showAuthOverlay = false;
-    });
-  }
-
-  void _closeAuthOverlay() {
-    setState(() {
-      _showAuthOverlay = false;
-    });
   }
 
   void _openDrawer() {
-    setState(() {
-      _showDrawer = true;
-    });
+    if (!_showDrawer && mounted) {
+      setState(() {
+        _showDrawer = true;
+      });
+    }
   }
 
   void _closeDrawer() {
-    setState(() {
-      _showDrawer = false;
-    });
+    if (_showDrawer && mounted) {
+      setState(() {
+        _showDrawer = false;
+      });
+    }
   }
 
   @override
@@ -180,113 +219,20 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CartProvider>(
-      builder: (context, cartProvider, child) {
-        return Stack(
-          children: [
-            Column(
-              children: [
-                // Navbar (logo and icons row)
-                Container(
-                  color: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 20, horizontal: 32), // more vertical space, wider padding
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Hamburger and search
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.menu, color: Colors.black87, size: 28),
-                            onPressed: _openDrawer,
-                            padding: EdgeInsets.zero,
-                            constraints: BoxConstraints(),
-                          ),
-                          SizedBox(width: 12),
-                          IconButton(
-                            icon: Icon(Icons.search, color: Colors.black87, size: 26),
-                            onPressed: () {},
-                            padding: EdgeInsets.zero,
-                            constraints: BoxConstraints(),
-                          ),
-                        ],
-                      ),
-                      // Centered logo
-                      Image.asset('assets/images/logo.png', height: 48),
-                      // User and cart icons with dropdown
-                      Row(
-                        children: [
-                          _buildUserDropdown(context),
-                          Stack(
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.shopping_bag_outlined, color: Colors.black87, size: 28),
-                                onPressed: () {
-                                  Navigator.pushNamed(context, '/cart');
-                                },
-                                padding: EdgeInsets.zero,
-                                constraints: BoxConstraints(),
-                              ),
-                              if (cartProvider.cartItems.isNotEmpty)
-                                Positioned(
-                                  right: 6,
-                                  top: 6,
-                                  child: CircleAvatar(
-                                    radius: 8,
-                                    backgroundColor: Colors.red,
-                                    child: Text(
-                                      cartProvider.cartItems.length.toString(),
-                                      style: TextStyle(fontSize: 10, color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Notification bar (announcement bar) below navbar
-                Container(
-                  width: double.infinity,
-                  color: Color(0xFF5A5A5A),
-                  padding: EdgeInsets.symmetric(vertical: 6), // slightly taller
-                  child: Center(
-                    child: Text(
-                      'Flat Rs 200 cashback on first Mobikwik UPI transaction*',
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, decorationColor: Color.fromARGB(255, 196, 196, 196), decorationThickness: 2),
-                    ),
-                  ),
-                ),
-                // Horizontal menu
-                Container(
-                  color: Colors.white,
-                  height: 54, // taller menu bar
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _buildUnderlineMenuItem('Home'),
-                        _buildUnderlineMenuItem('About Us'),
-                        _buildUnderlineMenuItem('Services'),
-                        _buildUnderlineMenuItem('Courses'),
-                        _buildUnderlineMenuItem('Doctors'),
-                        _buildUnderlineMenuItem('Products'),
-                        _buildUnderlineMenuItem('Contact Us'),
-                        _buildUnderlineMenuItem('FAQs'),
-                      ],
-                    ),
-                  ),
-                ),
-                // Expanded body
-                Expanded(
-                  child: Scaffold(
-                    backgroundColor: Colors.white,
-                    body: Stack(
+    return Scaffold(
+      body: Consumer<CartProvider>(
+        builder: (context, cartProvider, child) {
+          return Stack(
+            children: [
+              Column(
+                children: [
+                  // Navbar
+                  _buildNavbar(cartProvider),
+                  _buildNotificationBar(),
+                  _buildHorizontalMenu(),
+                  // Expanded body
+                  Expanded(
+                    child: Stack(
                       children: [
                         LayoutBuilder(
                           builder: (context, constraints) {
@@ -299,7 +245,7 @@ class _HomePageState extends State<HomePage> {
                             } else if (screenWidth >= 600) {
                               crossAxisCount = 2;
                             }
-                            double cardAspectRatio = 0.75;
+                            double cardAspectRatio = 0.65; // Reduced to accommodate quantity selector
                             double videoHeight = screenWidth * 9 / 16;
                             return SingleChildScrollView(
                               child: Column(
@@ -380,7 +326,20 @@ class _HomePageState extends State<HomePage> {
                                             final product = _products[index];
                                             return GestureDetector(
                                               onTap: () {
-                                                Navigator.pushNamed(context, '/products/${product.name.toLowerCase()}');
+                                                // Pass product data directly instead of using route name
+                                                final productMap = {
+                                                  'id': product.id,
+                                                  'name': product.name,
+                                                  'image': product.imageUrl,
+                                                  'desc': product.description,
+                                                  'price': product.price,
+                                                };
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => ProductDetailPage(product: productMap),
+                                                  ),
+                                                );
                                               },
                                               child: Card(
                                                 elevation: 4,
@@ -442,20 +401,88 @@ class _HomePageState extends State<HomePage> {
                                                         ],
                                                       ),
                                                       SizedBox(height: 4),
+                                                      // Quantity selector
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            'Qty:',
+                                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                                                          ),
+                                                          SizedBox(width: 4),
+                                                          Container(
+                                                            height: 24,
+                                                            decoration: BoxDecoration(
+                                                              border: Border.all(color: Colors.grey),
+                                                              borderRadius: BorderRadius.circular(4),
+                                                            ),
+                                                            child: Row(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
+                                                                InkWell(
+                                                                  onTap: () {
+                                                                    int currentQty = getQuantityForProduct(product.id);
+                                                                    if (currentQty > 1) {
+                                                                      setQuantityForProduct(product.id, currentQty - 1);
+                                                                    }
+                                                                  },
+                                                                  child: Container(
+                                                                    width: 24,
+                                                                    height: 24,
+                                                                    child: Icon(Icons.remove, size: 12),
+                                                                  ),
+                                                                ),
+                                                                Container(
+                                                                  width: 30,
+                                                                  height: 24,
+                                                                  decoration: BoxDecoration(
+                                                                    border: Border(
+                                                                      left: BorderSide(color: Colors.grey),
+                                                                      right: BorderSide(color: Colors.grey),
+                                                                    ),
+                                                                  ),
+                                                                  child: Center(
+                                                                    child: Text(
+                                                                      getQuantityForProduct(product.id).toString(),
+                                                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                InkWell(
+                                                                  onTap: () {
+                                                                    int currentQty = getQuantityForProduct(product.id);
+                                                                    if (currentQty < 10) { // Max quantity limit
+                                                                      setQuantityForProduct(product.id, currentQty + 1);
+                                                                    }
+                                                                  },
+                                                                  child: Container(
+                                                                    width: 24,
+                                                                    height: 24,
+                                                                    child: Icon(Icons.add, size: 12),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SizedBox(height: 4),
                                                       ElevatedButton(
                                                         onPressed: () {
+                                                          int selectedQuantity = getQuantityForProduct(product.id);
                                                           cartProvider.addToCart(
                                                             CartItem(
+                                                              productId: product.id,
                                                               name: product.name,
                                                               image: product.imageUrl,
                                                               desc: product.description,
                                                               price: product.price,
+                                                              quantity: selectedQuantity,
                                                             ),
                                                             productId: product.id,
                                                             productsList: _products,
                                                           );
                                                           ScaffoldMessenger.of(context).showSnackBar(
-                                                            SnackBar(content: Text('${product.name} added to cart!')),
+                                                            SnackBar(content: Text('${product.name} (${selectedQuantity}) added to cart!')),
                                                           );
                                                         },
                                                         style: ElevatedButton.styleFrom(
@@ -526,149 +553,151 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            // Drawer overlay
-            if (_showDrawer)
-              Positioned.fill(
-                child: Material(
-                  color: Colors.black.withOpacity(0.3),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      width: 350,
-                      color: Colors.white,
-                      child: SafeArea(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Top row: logo and close button
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Image.asset('assets/images/logo.png', height: 40),
-                                  IconButton(
-                                    icon: Icon(Icons.close, size: 28),
-                                    onPressed: _closeDrawer,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Sign in / Register
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextButton(
-                                    onPressed: () {
-                                      _closeDrawer();
-                                      _openAuthOverlay(true);
-                                    },
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text('Sign in', style: TextStyle(fontSize: 18, color: Colors.black, decoration: TextDecoration.underline)),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: TextButton(
-                                    onPressed: () {
-                                      _closeDrawer();
-                                      _openAuthOverlay(false);
-                                    },
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text('Register', style: TextStyle(fontSize: 18, color: Colors.black, decoration: TextDecoration.underline)),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Divider(),
-                            // Menu items
-                            Expanded(
-                              child: ListView(
-                                children: [
-                                  _buildDrawerMenuItem('Home', Icons.home),
-                                  _buildDrawerMenuItem('About Us', null),
-                                  _buildDrawerMenuItem('Services', null),
-                                  _buildDrawerMenuItem('Courses', null),
-                                  _buildDrawerMenuItem('Doctors', null),
-                                  _buildDrawerMenuItem('Products', null),
-                                  _buildDrawerMenuItem('Contact Us', null),
-                                  _buildDrawerMenuItem('FAQ', null),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                ],
               ),
-            // Overlay for login/register
-            if (_showAuthOverlay)
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: _closeAuthOverlay,
-                  child: Container(
-                    color: Colors.black.withOpacity(0.4),
-                    child: Center(
+              // Drawer overlay
+              if (_showDrawer)
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: _closeDrawer,
+                    child: Material(
+                      color: Colors.black.withOpacity(0.3),
+                      child: Align(
+                      alignment: Alignment.centerLeft,
                       child: GestureDetector(
-                        onTap: () {}, // Prevent tap from closing overlay
-                        child: Card(
-                          elevation: 8,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Container(
-                            width: 380,
-                            padding: EdgeInsets.all(24),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        onTap: () {}, // Prevent tap from closing drawer
+                        child: Container(
+                          width: 350,
+                          child: Drawer(
+                            child: Container(
+                              color: Color(0xFF4A2C2A),
+                              child: SafeArea(
+                                child: Column(
                                   children: [
-                                    Text(
-                                      _showLogin ? "Sign In" : "Register",
-                                      style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.deepPurple,
+                                    // Top section with user info
+                                    Padding(
+                                      padding: EdgeInsets.all(24),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 30,
+                                                backgroundColor: Colors.grey[300],
+                                                child: Icon(Icons.person, size: 40, color: Colors.grey),
+                                              ),
+                                              SizedBox(width: 16),
+                                              ValueListenableBuilder<String?>(
+                                                valueListenable: loggedInUsername,
+                                                builder: (context, username, _) {
+                                                  return Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        username?.isNotEmpty == true ? username! : 'Guest',
+                                                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                                      ),
+                                                      SizedBox(height: 4),
+                                                      Text(
+                                                        username?.isNotEmpty == true ? 'Welcome back!' : 'Sign in to continue',
+                                                        style: TextStyle(color: Colors.white, fontSize: 14),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          IconButton(
+                                            icon: Icon(Icons.close, color: Colors.white, size: 28),
+                                            onPressed: _closeDrawer,
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    IconButton(
-                                      icon: Icon(Icons.close),
-                                      onPressed: _closeAuthOverlay,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 12),
-                                _showLogin
-                                    ? LoginPageContent()
-                                    : SignupPageContent(),
-                                SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(_showLogin
-                                        ? "Don't have an account? "
-                                        : "Already have an account? "),
-                                    TextButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _showLogin = !_showLogin;
-                                        });
+                                    Divider(color: Colors.white54),
+                                    
+                                    // Conditional sign in/register or user options based on login status
+                                    ValueListenableBuilder<String?>(
+                                      valueListenable: loggedInUsername,
+                                      builder: (context, username, _) {
+                                        if (username?.isNotEmpty == true) {
+                                          // User is logged in - show user-specific options
+                                          return Column(
+                                            children: [
+                                              _buildDrawerItem(Icons.account_circle, 'My Account', () {
+                                                _closeDrawer();
+                                                Navigator.pushNamed(context, '/my-account');
+                                              }),
+                                              _buildDrawerItem(Icons.shopping_cart, 'My Cart', () {
+                                                _closeDrawer();
+                                                Navigator.pushNamed(context, '/cart');
+                                              }),
+                                              _buildDrawerItem(Icons.logout, 'Sign Out', () {
+                                                _closeDrawer();
+                                                loggedInUsername.value = null;
+                                                UserSession.clearUserSession();
+                                              }),
+                                              Divider(color: Colors.white54),
+                                            ],
+                                          );
+                                        } else {
+                                          // User is not logged in - show sign in and register options
+                                          return Column(
+                                            children: [
+                                              _buildDrawerItem(Icons.login, 'Sign In', () {
+                                                _closeDrawer();
+                                                _openAuthOverlay(true);
+                                              }),
+                                              _buildDrawerItem(Icons.person_add, 'Register', () {
+                                                _closeDrawer();
+                                                _openAuthOverlay(false);
+                                              }),
+                                              Divider(color: Colors.white54),
+                                            ],
+                                          );
+                                        }
                                       },
-                                      child: Text(_showLogin ? "Register" : "Sign In"),
                                     ),
+                                    
+                                    // Navigation menu items
+                                    _buildDrawerItem(Icons.home, 'Home', () {
+                                      _closeDrawer();
+                                      Navigator.pushNamed(context, '/home');
+                                    }),
+                                    _buildDrawerItem(Icons.info, 'About Us', () {
+                                      _closeDrawer();
+                                      Navigator.pushNamed(context, '/about');
+                                    }),
+                                    _buildDrawerItem(Icons.local_offer, 'Services', () {
+                                      _closeDrawer();
+                                      Navigator.pushNamed(context, '/services');
+                                    }),
+                                    _buildDrawerItem(Icons.school, 'Courses', () {
+                                      _closeDrawer();
+                                      Navigator.pushNamed(context, '/courses');
+                                    }),
+                                    _buildDrawerItem(Icons.person, 'Doctors', () {
+                                      _closeDrawer();
+                                      Navigator.pushNamed(context, '/doctors');
+                                    }),
+                                    _buildDrawerItem(Icons.shopping_cart, 'Products', () {
+                                      _closeDrawer();
+                                      Navigator.pushNamed(context, '/products');
+                                    }),
+                                    _buildDrawerItem(Icons.contact_mail, 'Contact Us', () {
+                                      _closeDrawer();
+                                      Navigator.pushNamed(context, '/contact');
+                                    }),
+                                    _buildDrawerItem(Icons.help, 'FAQs', () {
+                                      _closeDrawer();
+                                      Navigator.pushNamed(context, '/faqs');
+                                    }),
+                                    Spacer(),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -677,85 +706,181 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
 
 
-  Widget _buildUnderlineMenuItem(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildNavbar(CartProvider cartProvider) {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 32),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              color: const Color.fromARGB(221, 0, 0, 0),
-              fontWeight: FontWeight.w500,
-              decorationColor: const Color.fromARGB(255, 0, 0, 0),
-            ),
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.menu, color: Colors.black87, size: 28),
+                onPressed: _openDrawer,
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(),
+              ),
+              SizedBox(width: 12),
+              IconButton(
+                icon: Icon(Icons.search, color: Colors.black87, size: 26),
+                onPressed: () {},
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(),
+              ),
+            ],
+          ),
+          Image.asset('assets/images/logo.png', height: 48),
+          Row(
+            children: [
+              _buildUserDropdown(),
+              Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.shopping_bag_outlined, color: Colors.black87, size: 28),
+                    onPressed: () => Navigator.pushNamed(context, '/cart'),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+                  if (cartProvider.cartItems.isNotEmpty)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: CircleAvatar(
+                        radius: 8,
+                        backgroundColor: Colors.red,
+                        child: Text(
+                          cartProvider.cartItems.length.toString(),
+                          style: TextStyle(fontSize: 10, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
- 
+  Widget _buildNotificationBar() {
+    return Container(
+      width: double.infinity,
+      color: Color(0xFF5A5A5A),
+      padding: EdgeInsets.symmetric(vertical: 6),
+      child: Center(
+        child: Text(
+          'Flat Rs 200 cashback on first Mobikwik UPI transaction*',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            decoration: TextDecoration.underline,
+            decorationColor: Color.fromARGB(255, 196, 196, 196),
+            decorationThickness: 2,
+          ),
+        ),
+      ),
+    );
+  }
 
-  Widget _buildUserDropdown(BuildContext context) {
+  Widget _buildHorizontalMenu() {
+    return Container(
+      color: Colors.white,
+      height: 54,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildMenuItem('Home'),
+            _buildMenuItem('About Us'),
+            _buildMenuItem('Services'),
+            _buildMenuItem('Courses'),
+            _buildMenuItem('Doctors'),
+            _buildMenuItem('Products'),
+            _buildMenuItem('Contact Us'),
+            _buildMenuItem('FAQs'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String title) {
+    return InkWell(
+      onTap: () {
+        switch (title) {
+          case 'Home':
+            Navigator.pushNamed(context, '/home');
+            break;
+          case 'About Us':
+            Navigator.pushNamed(context, '/about');
+            break;
+          case 'Products':
+            Navigator.pushNamed(context, '/products');
+            break;
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Text(
+          title,
+          style: TextStyle(color: Colors.black87, fontSize: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserDropdown() {
     return ValueListenableBuilder<String?>(
       valueListenable: loggedInUsername,
       builder: (context, username, _) {
         if (username != null && username.isNotEmpty) {
-          // Show username and custom menu
           return PopupMenuButton<int>(
-            icon: Row(
-              children: [
-                Icon(Icons.person_outline, color: Colors.black87),
-                SizedBox(width: 4),
-                Text(username, style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-              ],
+            icon: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 12,
+                    backgroundColor: Color(0xFF4A2C2A),
+                    child: Icon(Icons.person, color: Colors.white, size: 16),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    username,
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade600, size: 18),
+                ],
+              ),
             ),
-            offset: Offset(0, 40),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 0,
-                child: Row(
-                  children: [Icon(Icons.shopping_cart, color: Colors.black87), SizedBox(width: 12), Text('My Cart')],
-                ),
-              ),
-              PopupMenuItem(
-                value: 1,
-                child: Row(
-                  children: [Icon(Icons.account_circle, color: Colors.black87), SizedBox(width: 12), Text('My Account')],
-                ),
-              ),
-              PopupMenuItem(
-                value: 2,
-                child: Row(
-                  children: [Icon(Icons.favorite_border, color: Colors.black87), SizedBox(width: 12), Text('My Wishlist')],
-                ),
-              ),
-              PopupMenuItem(
-                value: 3,
-                child: Row(
-                  children: [Icon(Icons.local_shipping, color: Colors.black87), SizedBox(width: 12), Text('Track Order')],
-                ),
-              ),
-              PopupMenuDivider(),
-              PopupMenuItem(
-                value: 4,
-                child: Row(
-                  children: [Icon(Icons.logout, color: Colors.black87), SizedBox(width: 12), Text('Sign Out')],
-                ),
-              ),
-            ],
+            offset: Offset(0, 48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 8,
+            color: Colors.white,
             onSelected: (value) {
               switch (value) {
                 case 0:
@@ -764,30 +889,112 @@ class _HomePageState extends State<HomePage> {
                 case 1:
                   Navigator.pushNamed(context, '/my-account');
                   break;
-                case 2:
-                  // TODO: Navigate to wishlist
-                  break;
-                case 3:
-                  // TODO: Navigate to track order
-                  break;
                 case 4:
-                  loggedInUsername.value = null; // Logout
+                  loggedInUsername.value = null;
                   UserSession.clearUserSession();
                   break;
               }
             },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 0,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.shopping_cart, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('My Cart', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 1,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.account_circle, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('My Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 2,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.favorite_border, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('My Wishlist', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 3,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.local_shipping, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('Track Order', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                height: 1,
+                child: Divider(color: Colors.grey.shade300, thickness: 1),
+              ),
+              PopupMenuItem(
+                value: 4,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.red.shade600, size: 20),
+                      SizedBox(width: 12),
+                      Text('Sign Out', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.red.shade600)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           );
         } else {
-          // Show Sign In/Register only, no Sign Out
           return PopupMenuButton<int>(
-            icon: Icon(Icons.person_outline, color: Colors.black87),
+            icon: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Color(0xFF4A2C2A),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person_outline, color: Colors.white, size: 18),
+                  SizedBox(width: 4),
+                  Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
+                ],
+              ),
+            ),
+            offset: Offset(0, 48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 8,
+            color: Colors.white,
             onSelected: (value) {
               switch (value) {
                 case 0:
-                  _openAuthOverlay(true); // Sign In
+                  _openAuthOverlay(true);
                   break;
                 case 1:
-                  _openAuthOverlay(false); // Register
+                  _openAuthOverlay(false);
                   break;
                 case 2:
                   Navigator.pushNamed(context, '/cart');
@@ -795,24 +1002,91 @@ class _HomePageState extends State<HomePage> {
                 case 3:
                   Navigator.pushNamed(context, '/my-account');
                   break;
-                case 4:
-                  // TODO: Wishlist
-                  break;
-                case 5:
-                  // TODO: Track order
-                  break;
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 0, child: Row(children: [Icon(Icons.login, size: 18), SizedBox(width: 8), Text('Sign In')])) ,
-              PopupMenuItem(value: 1, child: Row(children: [Icon(Icons.person_add, size: 18), SizedBox(width: 8), Text('Register')])) ,
-              PopupMenuDivider(),
-              PopupMenuItem(value: 2, child: Row(children: [Icon(Icons.shopping_cart, size: 18), SizedBox(width: 8), Text('My Cart')])) ,
-              PopupMenuItem(value: 3, child: Row(children: [Icon(Icons.account_circle, size: 18), SizedBox(width: 8), Text('My Account')])) ,
-              PopupMenuItem(value: 4, child: Row(children: [Icon(Icons.favorite_border, size: 18), SizedBox(width: 8), Text('My Wishlist')])) ,
-              PopupMenuItem(value: 5, child: Row(children: [Icon(Icons.local_shipping, size: 18), SizedBox(width: 8), Text('Track Order')])) ,
-              PopupMenuDivider(),
-              // No Sign Out here
+              PopupMenuItem(
+                value: 0,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.login, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('Sign In', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 1,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_add, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('Register', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                height: 1,
+                child: Divider(color: Colors.grey.shade300, thickness: 1),
+              ),
+              PopupMenuItem(
+                value: 2,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.shopping_cart, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('My Cart', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 3,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.account_circle, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('My Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 4,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.favorite_border, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('My Wishlist', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 5,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.local_shipping, color: Color(0xFF4A2C2A), size: 20),
+                      SizedBox(width: 12),
+                      Text('Track Order', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
             ],
           );
         }
@@ -820,17 +1094,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDrawerMenuItem(String title, IconData? icon) {
-    return ListTile(
-      leading: icon != null ? Icon(icon, color: Colors.black87) : null,
-      title: Text(
-        title,
-        style: TextStyle(fontSize: 22, color: Colors.black87, fontWeight: FontWeight.w400),
+  Widget _buildDrawerItem(IconData icon, String text, VoidCallback onTap) {
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 20),
+              SizedBox(width: 16),
+              Text(text, style: TextStyle(color: Colors.white, fontSize: 16)),
+            ],
+          ),
+        ),
       ),
-      onTap: () {
-        // TODO: Add navigation logic for each menu item
-        _closeDrawer();
-      },
     );
   }
 }

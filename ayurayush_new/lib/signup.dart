@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'app_config.dart';
+import 'styles.dart';
 
 class SignupPageContent extends StatefulWidget {
   @override
@@ -82,111 +83,155 @@ class _SignupPageContentState extends State<SignupPageContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: 400),
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 16,
-                offset: Offset(0, 4),
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextField(
+          controller: _phoneController,
+          decoration: InputDecoration(
+            labelText: 'Phone',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Color(0xFF4A2C2A), width: 2),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Don't have an account ?", style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
-              SizedBox(height: 24),
-              TextField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Phone',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: 'Username',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _whatsappController,
-                decoration: InputDecoration(
-                  labelText: 'WhatsApp',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              SizedBox(height: 20),
-              if (_error != null)
-                Text(_error!, style: TextStyle(color: Colors.red)),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _signUp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black87,
-                    padding: EdgeInsets.symmetric(vertical: 18),
-                    shape: StadiumBorder(),
-                  ),
-                  child: _loading
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text('Register', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                ),
-              ),
-              SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text('OR'),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              SizedBox(height: 12),
-              Text('You can also register with'),
-              SizedBox(height: 12),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await _signInWithGoogle();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    shape: CircleBorder(),
-                    backgroundColor: Colors.white,
-                    elevation: 2,
-                    padding: EdgeInsets.all(12),
-                  ),
-                  child: Icon(Icons.g_mobiledata, size: 32, color: Colors.red),
-                ),
-              ),
-            ],
+          keyboardType: TextInputType.phone,
+        ),
+        SizedBox(height: 16),
+        TextField(
+          controller: _usernameController,
+          decoration: InputDecoration(
+            labelText: 'Username',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Color(0xFF4A2C2A), width: 2),
+            ),
           ),
         ),
-      ),
+        SizedBox(height: 16),
+        TextField(
+          controller: _passwordController,
+          decoration: InputDecoration(
+            labelText: 'Password',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Color(0xFF4A2C2A), width: 2),
+            ),
+          ),
+          obscureText: true,
+        ),
+        SizedBox(height: 16),
+        TextField(
+          controller: _whatsappController,
+          decoration: InputDecoration(
+            labelText: 'WhatsApp',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Color(0xFF4A2C2A), width: 2),
+            ),
+          ),
+          keyboardType: TextInputType.phone,
+        ),
+        SizedBox(height: 16),
+        if (_error != null)
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.shade200),
+            ),
+            child: Text(_error!, style: TextStyle(color: Colors.red.shade700)),
+          ),
+        SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _loading ? null : _signUp,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF4A2C2A),
+              padding: EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 2,
+            ),
+            child: _loading
+                ? SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    'Register',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ),
+        SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(child: Divider(color: Colors.grey.shade400)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                'OR',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Expanded(child: Divider(color: Colors.grey.shade400)),
+          ],
+        ),
+        SizedBox(height: 16),
+        Center(
+          child: Text(
+            'You can also register with',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        SizedBox(height: 12),
+        Center(
+          child: ElevatedButton(
+            onPressed: () async {
+              await _signInWithGoogle();
+            },
+            style: ElevatedButton.styleFrom(
+              shape: CircleBorder(),
+              backgroundColor: Colors.white,
+              elevation: 2,
+              padding: EdgeInsets.all(12),
+              side: BorderSide(color: Colors.grey.shade300),
+            ),
+            child: Icon(Icons.g_mobiledata, size: 32, color: Colors.red),
+          ),
+        ),
+      ],
     );
   }
 }

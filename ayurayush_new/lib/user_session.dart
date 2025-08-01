@@ -25,6 +25,7 @@ class UserSession {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_usernameKey);
     await prefs.remove(_userIdKey);
+    await prefs.remove(_tokenKey); // Also clear the token
   }
 
   static Future<void> saveToken(String token) async {

@@ -13,7 +13,7 @@ const kProductRatingStyle = TextStyle(fontSize: 12, color: Colors.grey);
 
 const kButtonTextStyle = TextStyle(fontSize: 14, color: Colors.white);
 const kPrimaryButtonColor = Color.fromARGB(255, 83, 11, 80);
-const kAddToCartButtonColor = Colors.orange;
+const kAddToCartButtonColor = Color(0xFF4A2C2A);
 const kSupportSectionBackground = Color(0xFFF5F5F5);
 const kSupportIconColor = Color.fromARGB(255, 83, 11, 80);
 const kSupportTextStyle = TextStyle(fontSize: 14, color: Color.fromARGB(255, 83, 11, 80));
