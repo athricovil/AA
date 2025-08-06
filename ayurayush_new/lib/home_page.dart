@@ -4,14 +4,12 @@ import 'package:provider/provider.dart';
 import 'chatbot_widget.dart';
 import 'providers/cart_provider.dart';
 import 'styles.dart';
-import 'login.dart';
-import 'signup.dart';
-import 'app_config.dart';
 import 'product.dart';
 import 'product_detail_page.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'user_session.dart';
+import 'services/api_service.dart';
+import 'utils/auth_dialog.dart';
+import 'mixins/quantity_management_mixin.dart';
 
 ValueNotifier<String?> loggedInUsername = ValueNotifier<String?>(null);
 
@@ -20,7 +18,7 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with QuantityManagementMixin {
   late VideoPlayerController _controller;
   late Future<void> _initializeVideoPlayerFuture;
 
@@ -31,105 +29,10 @@ class _HomePageState extends State<HomePage> {
   List<Product> _products = [];
   bool _productsLoading = true;
   String? _productsError;
-  Map<int, int> _productQuantities = {}; // Track quantities for each product
-
-  int getQuantityForProduct(int productId) {
-    return _productQuantities[productId] ?? 1;
-  }
-
-  void setQuantityForProduct(int productId, int quantity) {
-    if (_productQuantities[productId] != quantity && mounted) {
-      setState(() {
-        _productQuantities[productId] = quantity;
-      });
-    }
-  }
+  final ApiService _apiService = ApiService();
 
   void _openAuthOverlay(bool login) async {
-    final result = await showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          width: 400,
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        login ? "Sign In" : "Register",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A2C2A),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: Colors.grey.shade600),
-                        onPressed: () => Navigator.pop(context),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.grey.shade100,
-                          shape: CircleBorder(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  login ? LoginPageContent() : SignupPageContent(),
-                  SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        login ? "Don't have an account? " : "Already have an account? ",
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _openAuthOverlay(!login);
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Color(0xFF4A2C2A),
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                        ),
-                        child: Text(
-                          login ? "Register" : "Sign In",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    final result = await AuthDialog.show(context, login);
 
     if (result == 'show_signin') {
       // Registration success, open sign in modal
@@ -190,19 +93,10 @@ class _HomePageState extends State<HomePage> {
       _productsError = null;
     });
     try {
-      final response = await http.get(Uri.parse(AppConfig.apiBaseUrl + '/products'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          _products = data.map((json) => Product.fromJson(json)).toList();
-          _productsLoading = false;
-        });
-      } else {
-        setState(() {
-          _productsError = 'Failed to load products';
-          _productsLoading = false;
-        });
-      }
+      _products = await _apiService.fetchProducts();
+      setState(() {
+        _productsLoading = false;
+      });
     } catch (e) {
       setState(() {
         _productsError = 'Error: $e';
@@ -420,10 +314,7 @@ class _HomePageState extends State<HomePage> {
                                                               children: [
                                                                 InkWell(
                                                                   onTap: () {
-                                                                    int currentQty = getQuantityForProduct(product.id);
-                                                                    if (currentQty > 1) {
-                                                                      setQuantityForProduct(product.id, currentQty - 1);
-                                                                    }
+                                                                                            decrementQuantity(product.id);
                                                                   },
                                                                   child: Container(
                                                                     width: 24,
@@ -451,7 +342,7 @@ class _HomePageState extends State<HomePage> {
                                                                   onTap: () {
                                                                     int currentQty = getQuantityForProduct(product.id);
                                                                     if (currentQty < 10) { // Max quantity limit
-                                                                      setQuantityForProduct(product.id, currentQty + 1);
+                                                                      incrementQuantity(product.id);
                                                                     }
                                                                   },
                                                                   child: Container(

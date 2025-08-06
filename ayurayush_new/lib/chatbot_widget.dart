@@ -14,8 +14,8 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
   final TextEditingController _controller = TextEditingController();
 
   final List<Map<String, dynamic>> _products = [
-    {'name': 'Pilopouse', 'image': 'assets/images/pilopouse.jpg', 'desc': 'Herbal supplement for health.', 'price': 2195.00, 'keywords': ['supplement', 'health']},
-    {'name': 'Prostostop', 'image': 'assets/images/prostostop.jpg', 'desc': 'Supports prostate health.', 'price': 875.00, 'keywords': ['prostate', 'health']},
+    {'name': 'Pilopouse', 'image': 'assets/images/Pilopouse.jpg', 'desc': 'Herbal supplement for health.', 'price': 2195.00, 'keywords': ['supplement', 'health']},
+    {'name': 'Prostostop', 'image': 'assets/images/Prostostop.jpg', 'desc': 'Supports prostate health.', 'price': 875.00, 'keywords': ['prostate', 'health']},
     {'name': 'Saffron Care', 'image': 'assets/images/saffron_care.jpg', 'desc': 'Skin-nourishing oil.', 'price': 3895.00, 'keywords': ['skin', 'care', 'oil']},
     {'name': 'Stomacalm', 'image': 'assets/images/stomacalm.jpg', 'desc': 'Digestive health support.', 'price': 1599.00, 'keywords': ['digestive', 'health']},
     {'name': 'Vaji Cap', 'image': 'assets/images/vaji_cap.jpg', 'desc': 'Herbal supplements to improve sexual capacity.', 'price': 2499.00, 'keywords': ['sexual', 'health', 'supplement']},
