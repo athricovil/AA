@@ -1,136 +1,31 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 import 'providers/cart_provider.dart';
 import 'product.dart';
-import 'app_config.dart';
 import 'styles.dart';
 import 'user_session.dart';
 import 'home_page.dart'; // for loggedInUsername
-import 'login.dart';
-import 'signup.dart';
+import 'services/api_service.dart';
+import 'utils/auth_dialog.dart';
+import 'mixins/quantity_management_mixin.dart';
 
 class ProductsPage extends StatefulWidget {
   @override
   _ProductsPageState createState() => _ProductsPageState();
 }
 
-class _ProductsPageState extends State<ProductsPage> {
+class _ProductsPageState extends State<ProductsPage> with QuantityManagementMixin {
   late Future<List<Product>> _productsFuture;
-  Map<int, int> _productQuantities = {}; // Track quantities for each product
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
-    _productsFuture = fetchProducts();
-  }
-
-  Future<List<Product>> fetchProducts() async {
-    final response = await http.get(Uri.parse(AppConfig.apiBaseUrl + '/products'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.map((json) => Product.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load products');
-    }
-  }
-
-  int getQuantityForProduct(int productId) {
-    return _productQuantities[productId] ?? 1;
-  }
-
-  void setQuantityForProduct(int productId, int quantity) {
-    setState(() {
-      _productQuantities[productId] = quantity;
-    });
+    _productsFuture = _apiService.fetchProducts();
   }
 
   void _openAuthOverlay(bool login) async {
-    final result = await showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          width: 400,
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        login ? "Sign In" : "Register",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A2C2A),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: Colors.grey.shade600),
-                        onPressed: () => Navigator.pop(context),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.grey.shade100,
-                          shape: CircleBorder(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  login ? LoginPageContent() : SignupPageContent(),
-                  SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        login ? "Don't have an account? " : "Already have an account? ",
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _openAuthOverlay(!login);
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Color(0xFF4A2C2A),
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                        ),
-                        child: Text(
-                          login ? "Register" : "Sign In",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    final result = await AuthDialog.show(context, login);
 
     if (result == 'show_signin') {
       _openAuthOverlay(true);
@@ -619,10 +514,7 @@ class _ProductsPageState extends State<ProductsPage> {
                           children: [
                             InkWell(
                               onTap: () {
-                                int currentQty = getQuantityForProduct(product.id);
-                                if (currentQty > 1) {
-                                  setQuantityForProduct(product.id, currentQty - 1);
-                                }
+                                                        decrementQuantity(product.id);
                               },
                               child: Container(
                                 width: 32,
@@ -644,8 +536,7 @@ class _ProductsPageState extends State<ProductsPage> {
                             ),
                             InkWell(
                               onTap: () {
-                                int currentQty = getQuantityForProduct(product.id);
-                                setQuantityForProduct(product.id, currentQty + 1);
+                                                        incrementQuantity(product.id);
                               },
                               child: Container(
                                 width: 32,

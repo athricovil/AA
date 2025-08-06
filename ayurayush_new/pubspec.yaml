@@ -26,14 +26,23 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    # Core app assets
     - assets/images/logo.png
+    - assets/images/logo-ayurayush.jpg
+    
+    # Product images
     - assets/images/Pilopouse.jpg
     - assets/images/Prostostop.jpg
     - assets/images/saffron_care.jpg
     - assets/images/stomacalm.jpg
     - assets/images/vaji_cap.jpg
-    - assets/videos/output.mp4
-    - assets/images/logo-ayurayush.jpg
+    - assets/images/bringadi.jpg
+    
+    # Course/carousel images
+    - assets/images/American-studen-ebfdf61a-402d-470f-aea1-175fce862c20.webp
+    - assets/images/AYURVEDA-FUNDAMENTAL-COURSE.webp
+    - assets/images/AYURVEDA-PANCHAKARMA.webp
+    - assets/images/Tridosha-Phylos-93bcb7cd-2cd7-4967-ab96-7a1ffa759459.webp
+    
+    # Videos
     - assets/videos/AAV_web.mp4
-    - assets/videos/
-    - assets/images/
